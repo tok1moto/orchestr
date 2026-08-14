@@ -7,17 +7,29 @@
     "dev": "tsx watch src/index.ts",
     "build": "rimraf dist && tsc",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "node --import tsx --test tests/**/*.test.ts",
+    "db:migrate": "node-pg-migrate -r dotenv/config up",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "migrate:create": "node-pg-migrate create",
+    "migrate:up": "node-pg-migrate -r dotenv/config up",
+    "migrate:down": "node-pg-migrate -r dotenv/config down",
+    "migrate:redo": "node-pg-migrate -r dotenv/config redo"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/postgres": "^5.2.2",
     "dotenv": "^16.4.5",
-    "fastify": "^4.28.1"
+    "fastify": "^4.28.1",
+    "fastify-plugin": "^6.0.0",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
+    "@types/pg": "^8.21.0",
     "rimraf": "^5.0.5",
     "tsx": "^4.7.2",
     "typescript": "^5.4.5"

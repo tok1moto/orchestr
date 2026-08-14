@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import Fastify from 'fastify';
+import dbPlugin from './plugins/db';
 
 dotenv.config();
 
@@ -7,8 +8,42 @@ const server = Fastify({
   logger: true,
 });
 
-server.get('/health', async (_request, _reply) => {
-  return { status: 'ok', timestamp: new Date().toISOString() };
+server.register(dbPlugin);
+
+server.get('/health', async (_request, reply) => {
+  const healthStatus: Record<string, any> = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    services: {
+      database: { status: 'unknown' },
+    },
+  };
+
+  try {
+    const startTime = Date.now();
+    await server.pg.query('SELECT 1');
+    const responseTimeMs = Date.now() - startTime;
+
+    healthStatus.services.database = {
+      status: 'up',
+      responseTimeMs,
+      pool: {
+        totalCount: server.pg.pool.totalCount,
+        idleCount: server.pg.pool.idleCount,
+        waitingCount: server.pg.pool.waitingCount,
+      },
+    };
+  } catch (err: any) {
+    server.log.error({ err }, 'Health check: Database ping failed');
+    healthStatus.status = 'degraded';
+    healthStatus.services.database = {
+      status: 'down',
+      error: err.message,
+    };
+    return reply.status(503).send(healthStatus);
+  }
+
+  return healthStatus;
 });
 
 const start = async () => {
