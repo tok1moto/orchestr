@@ -1,9 +1,12 @@
+import path from 'path';
 import dotenv from 'dotenv';
 import Fastify from 'fastify';
+import fastifyStatic from '@fastify/static';
 import dbPlugin from './plugins/db';
 import authRoutes from './routes/auth.routes';
 import sellerRoutes from './routes/seller.routes';
 import channelRoutes from './routes/channel.routes';
+import orderRoutes from './routes/order.routes';
 
 dotenv.config();
 
@@ -11,12 +14,19 @@ const server = Fastify({
   logger: true,
 });
 
+server.register(fastifyStatic, {
+  root: path.join(process.cwd(), 'public'),
+  prefix: '/',
+});
+
 server.register(dbPlugin);
 server.register(authRoutes);
 server.register(sellerRoutes);
 server.register(channelRoutes);
+server.register(orderRoutes);
 
-server.get('/', async () => {
+
+server.get('/api', async () => {
   return {
     name: 'Orchestr API',
     version: '1.0.0',
