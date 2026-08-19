@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import Fastify from 'fastify';
 import dbPlugin from './plugins/db';
+import authRoutes from './routes/auth.routes';
 
 dotenv.config();
 
@@ -9,6 +10,8 @@ const server = Fastify({
 });
 
 server.register(dbPlugin);
+server.register(authRoutes);
+
 
 server.get('/health', async (_request, reply) => {
   const healthStatus: Record<string, any> = {

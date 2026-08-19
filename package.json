@@ -21,9 +21,13 @@
   "license": "ISC",
   "dependencies": {
     "@fastify/postgres": "^5.2.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "fastify-plugin": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
     "node-pg-migrate": "^9.0.0",
     "pg": "^8.23.0"
   },
