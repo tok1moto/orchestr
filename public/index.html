@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orchestr | Multi-Channel Order & Inventory Dashboard</title>
+  <meta name="description" content="Conducting harmony from chaos. Orchestr syncs orders and inventory across Shopify, Amazon, and custom sites into one unified dashboard.">
+  
+  <!-- Google Fonts: Inter & Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app" class="app-layout">
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <div class="mobile-brand">
+        <span class="brand-icon"><i data-lucide="waves"></i></span>
+        <span class="brand-name">Orchestr</span>
+      </div>
+      <div class="mobile-actions">
+        <button id="themeToggleMobile" class="icon-btn" aria-label="Toggle Theme">
+          <i data-lucide="moon" class="dark-icon"></i>
+          <i data-lucide="sun" class="light-icon"></i>
+        </button>
+        <button id="mobileMenuBtn" class="icon-btn" aria-label="Toggle Navigation">
+          <i data-lucide="menu"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sidebar Navigation (256px wide) -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <i data-lucide="waves"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Orchestr</span>
+          <span class="brand-tagline">Order Harmony</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="orders">
+          <i data-lucide="shopping-bag"></i>
+          <span>Orders</span>
+          <span class="badge badge-accent" id="navOrdersBadge">5</span>
+        </button>
+        <button class="nav-item" data-view="inventory">
+          <i data-lucide="package"></i>
+          <span>Inventory</span>
+          <span class="badge badge-warning" id="navLowStockBadge">1</span>
+        </button>
+        <button class="nav-item" data-view="channels">
+          <i data-lucide="layers"></i>
+          <span>Channels</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-summary">
+          <div class="avatar" id="userAvatar">A</div>
+          <div class="user-info">
+            <span class="user-name" id="sidebarUserName">Acme Store</span>
+            <span class="user-email" id="sidebarUserEmail">merchant@acme.com</span>
+          </div>
+        </div>
+        <div class="footer-actions">
+          <button id="themeToggleSidebar" class="btn btn-ghost btn-sm" title="Toggle Theme">
+            <i data-lucide="moon" class="dark-icon"></i>
+            <i data-lucide="sun" class="light-icon"></i>
+            <span class="theme-text">Theme</span>
+          </button>
+          <button id="authBtn" class="btn btn-ghost btn-sm text-error" title="Sign Out">
+            <i data-lucide="log-out"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area (Max 1200px) -->
+    <main class="main-content">
+      <header class="top-header">
+        <div class="header-left">
+          <h1 id="pageTitle" class="page-title">Dashboard Overview</h1>
+          <p id="pageSubtitle" class="page-subtitle">Real-time status across all connected sales channels</p>
+        </div>
+        <div class="header-right">
+          <div class="sync-indicator pulse" id="syncStatusIndicator">
+            <span class="dot"></span>
+            <span id="syncStatusText">Auto-Syncing</span>
+          </div>
+          <button id="globalSyncBtn" class="btn btn-secondary btn-sm">
+            <i data-lucide="refresh-cw"></i>
+            <span>Sync All</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-container">
+        <!-- View 1: Dashboard -->
+        <section id="viewDashboard" class="view-section active">
+          <!-- Metric Grid (1 -> 2 -> 4 col) -->
+          <div class="metrics-grid">
+            <div class="metric-card emphasis">
+              <div class="metric-header">
+                <span class="metric-label">Total Revenue</span>
+                <span class="metric-icon icon-primary"><i data-lucide="dollar-sign"></i></span>
+              </div>
+              <div class="metric-value">$2,514.42</div>
+              <div class="metric-subtext success">
+                <i data-lucide="trending-up"></i> +14.2% from yesterday
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Active Orders</span>
+                <span class="metric-icon icon-accent"><i data-lucide="shopping-cart"></i></span>
+              </div>
+              <div class="metric-value" id="dashActiveOrders">5</div>
+              <div class="metric-subtext">Across 2 platforms</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Low Stock Items</span>
+                <span class="metric-icon icon-warning"><i data-lucide="alert-triangle"></i></span>
+              </div>
+              <div class="metric-value text-warning" id="dashLowStockCount">1</div>
+              <div class="metric-subtext warning">Action needed</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Connected Channels</span>
+                <span class="metric-icon icon-success"><i data-lucide="check-circle-2"></i></span>
+              </div>
+              <div class="metric-value" id="dashConnectedChannels">2</div>
+              <div class="metric-subtext success">100% operational</div>
+            </div>
+          </div>
+
+          <!-- Channel Overview Cards -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>Channel Health & Status</h2>
+              <button class="btn btn-link btn-sm" id="manageChannelsBtn">Manage Channels &rarr;</button>
+            </div>
+            <div class="channels-status-grid" id="dashChannelsGrid">
+              <!-- Channel items rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Recent Orders Table -->
+          <div class="section-block">
+            <div class="section-header">
+              <h2>Recent Orders</h2>
+              <button class="btn btn-link btn-sm" id="viewAllOrdersBtn">View All Orders &rarr;</button>
+            </div>
+            <div class="card table-card">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Order #</th>
+                      <th>Channel</th>
+                      <th>Customer</th>
+                      <th>Items</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashOrdersTbody">
+                    <!-- Loaded dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 2: Orders -->
+        <section id="viewOrders" class="view-section">
+          <div class="filter-bar card">
+            <div class="search-input-group">
+              <i data-lucide="search"></i>
+              <input type="text" id="orderSearchInput" placeholder="Search by order #, customer, or channel...">
+            </div>
+            <div class="filter-controls">
+              <select id="orderStatusFilter" class="form-select">
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select id="orderChannelFilter" class="form-select">
+                <option value="all">All Channels</option>
+                <option value="shopify">Shopify</option>
+                <option value="amazon">Amazon</option>
+                <option value="custom">Custom Site</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Order #</th>
+                    <th>Channel</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTbody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 3: Inventory -->
+        <section id="viewInventory" class="view-section">
+          <div class="alert-banner warning-banner hidden" id="lowStockAlertBanner">
+            <i data-lucide="alert-triangle"></i>
+            <div>
+              <strong>Low Inventory Alert:</strong> <span id="lowStockAlertText">Some products are below the minimum stock threshold (10 units).</span>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-header-bar">
+              <h2>Multi-Channel Stock Inventory</h2>
+              <button id="syncInventoryBtn" class="btn btn-secondary btn-sm">
+                <i data-lucide="refresh-cw"></i> Sync Stock
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Product Title</th>
+                    <th>SKU</th>
+                    <th>Unit Price</th>
+                    <th>Stock Level</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTbody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 4: Channels -->
+        <section id="viewChannels" class="view-section">
+          <div class="section-actions-bar">
+            <div>
+              <h2>Sales Channels</h2>
+              <p class="subtitle">Connect and monitor your e-commerce platforms</p>
+            </div>
+            <button id="openAddChannelBtn" class="btn btn-primary">
+              <i data-lucide="plus"></i> Connect Channel
+            </button>
+          </div>
+
+          <div class="channels-grid" id="channelsListGrid">
+            <!-- Rendered dynamically -->
+          </div>
+        </section>
+
+        <!-- View 5: Settings / Profile -->
+        <section id="viewSettings" class="view-section">
+          <div class="settings-layout">
+            <div class="card settings-card">
+              <h2>Seller Profile Settings</h2>
+              <form id="profileForm" class="form-grid">
+                <div class="form-group">
+                  <label for="profName">Store / Name</label>
+                  <input type="text" id="profName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label for="profEmail">Account Email</label>
+                  <input type="email" id="profEmail" class="form-input" disabled>
+                </div>
+                <div class="form-group">
+                  <label for="profCompany">Company Name</label>
+                  <input type="text" id="profCompany" class="form-input" placeholder="Acme Global Inc.">
+                </div>
+                <div class="form-group">
+                  <label for="profTimezone">Timezone</label>
+                  <select id="profTimezone" class="form-select">
+                    <option value="UTC">UTC (Coordinated Universal Time)</option>
+                    <option value="America/New_York">Eastern Time (US & Canada)</option>
+                    <option value="America/Chicago">Central Time (US & Canada)</option>
+                    <option value="America/Los_Angeles">Pacific Time (US & Canada)</option>
+                    <option value="Europe/London">London (GMT)</option>
+                    <option value="Asia/Singapore">Singapore (SGT)</option>
+                  </select>
+                </div>
+
+                <div class="form-group full-width">
+                  <h3>Notification Preferences</h3>
+                  <div class="checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="prefEmailAlerts" checked>
+                      <span>Receive email alerts for low stock items</span>
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="prefOrderUpdates" checked>
+                      <span>Receive real-time order status updates</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
+                  <span id="profileSuccessMsg" class="text-success hidden"><i data-lucide="check"></i> Profile saved!</span>
+                </div>
+              </form>
+            </div>
+
+            <div class="card settings-card">
+              <h2>Preferences & Theme</h2>
+              <div class="form-group">
+                <label>Appearance Theme</label>
+                <div class="theme-picker">
+                  <button id="themeAutoBtn" class="btn btn-secondary theme-option">Auto (System)</button>
+                  <button id="themeLightBtn" class="btn btn-secondary theme-option">Light Mode</button>
+                  <button id="themeDarkBtn" class="btn btn-secondary theme-option">Dark Mode</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Connect Shopify / Add Channel Modal -->
+  <div id="channelModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modalTitle">Connect Sales Channel</h2>
+        <button id="closeChannelModalBtn" class="icon-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="connectShopifyForm">
+          <div class="form-group">
+            <label for="shopifyStoreDomain">Shopify Store Domain</label>
+            <input type="text" id="shopifyStoreDomain" class="form-input" placeholder="your-store.myshopify.com" required>
+            <small class="form-help">Enter your Shopify store domain (e.g. acme-retail.myshopify.com)</small>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelChannelBtn">Cancel</button>
+            <button type="submit" class="btn btn-accent" id="submitShopifyAuthBtn">
+              <i data-lucide="external-link"></i> Connect via Shopify OAuth
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal (Login / Register / Forgot Password) -->
+  <div id="authModal" class="modal-overlay hidden">
+    <div class="modal-card auth-card">
+      <div class="auth-brand">
+        <i data-lucide="waves"></i>
+        <h2>Welcome to Orchestr</h2>
+        <p>Conducting harmony from chaos across your channels</p>
+      </div>
+
+      <div class="auth-tabs" id="authTabsHeader">
+        <button id="tabLoginBtn" class="auth-tab active">Log In</button>
+        <button id="tabRegisterBtn" class="auth-tab">Sign Up</button>
+      </div>
+
+      <!-- Error & Success Alert Banners -->
+      <div id="authErrorMsg" class="alert-banner error-banner hidden"></div>
+      <div id="authSuccessMsg" class="alert-banner success-banner hidden"></div>
+
+      <!-- Form 1: Log In & Sign Up Form -->
+      <form id="authForm" class="form-grid">
+        <div class="form-group" id="companyFormGroup" style="display:none;">
+          <label for="authCompanyName">Company / Store Name <small>(Optional)</small></label>
+          <input type="text" id="authCompanyName" class="form-input" placeholder="Acme Retailers Inc.">
+        </div>
+        <div class="form-group" id="nameFormGroup" style="display:none;">
+          <label for="authName">Full Name</label>
+          <input type="text" id="authName" class="form-input" placeholder="Alex Morgan">
+        </div>
+        <div class="form-group">
+          <label for="authEmail">Email Address</label>
+          <input type="email" id="authEmail" class="form-input" placeholder="seller@example.com" required value="seller@acmeretail.com">
+          <small id="emailErrorMsg" class="text-error hidden">Please enter a valid email address.</small>
+        </div>
+        <div class="form-group">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" class="form-input" placeholder="••••••••" required value="Password123!">
+          
+          <!-- Password Strength Indicator (Sign Up Mode) -->
+          <div id="passwordStrengthWrapper" class="password-strength-container hidden">
+            <div class="strength-bar-bg">
+              <div id="strengthBar" class="strength-bar"></div>
+            </div>
+            <span id="strengthText" class="strength-text">Password Strength: Weak</span>
+          </div>
+        </div>
+
+        <div class="form-row-between" id="rememberForgotRow">
+          <label class="checkbox-label">
+            <input type="checkbox" id="rememberMeCheckbox" checked>
+            <span>Remember me</span>
+          </label>
+          <a href="#" id="forgotPasswordLink" class="text-link">Forgot password?</a>
+        </div>
+
+        <div class="form-actions full-width">
+          <button type="submit" class="btn btn-primary full-width-btn" id="submitAuthBtn">Log In</button>
+        </div>
+
+        <!-- Toggle Mode Links -->
+        <div class="auth-footer-link" id="authToggleFooter">
+          <span id="toggleText">Don't have an account?</span>
+          <a href="#" id="toggleModeLink" class="text-link">Sign up</a>
+        </div>
+
+        <!-- Social Login Option -->
+        <div class="social-login-wrapper" id="socialLoginWrapper">
+          <div class="divider"><span>Or continue with</span></div>
+          <div class="social-btn-group">
+            <button type="button" class="btn btn-secondary social-btn" id="socialGoogleBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>
+              Google
+            </button>
+            <button type="button" class="btn btn-secondary social-btn" id="socialGithubBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              GitHub
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Form 2: Forgot Password Form (Hidden by default) -->
+      <form id="forgotPasswordForm" class="form-grid hidden">
+        <div class="form-group">
+          <label for="forgotEmail">Email Address</label>
+          <input type="email" id="forgotEmail" class="form-input" placeholder="seller@example.com" required>
+        </div>
+        <div class="form-actions full-width">
+          <button type="submit" class="btn btn-primary full-width-btn" id="submitForgotBtn">Send Reset Link</button>
+        </div>
+        <div class="auth-footer-link">
+          <a href="#" id="backToLoginFromForgot" class="text-link">&larr; Back to Log in</a>
+        </div>
+      </form>
+
+      <!-- Form 3: Reset Password Form (Hidden by default) -->
+      <form id="resetPasswordForm" class="form-grid hidden">
+        <div class="form-group">
+          <label for="resetTokenInput">Reset Token</label>
+          <input type="text" id="resetTokenInput" class="form-input" placeholder="reset_tok_..." required>
+        </div>
+        <div class="form-group">
+          <label for="resetNewPassword">New Password</label>
+          <input type="password" id="resetNewPassword" class="form-input" placeholder="Minimum 8 characters" required>
+        </div>
+        <div class="form-group">
+          <label for="resetConfirmPassword">Confirm New Password</label>
+          <input type="password" id="resetConfirmPassword" class="form-input" placeholder="Re-enter password" required>
+        </div>
+        <div class="form-actions full-width">
+          <button type="submit" class="btn btn-primary full-width-btn" id="submitResetBtn">Reset Password</button>
+        </div>
+        <div class="auth-footer-link">
+          <a href="#" id="backToLoginFromReset" class="text-link">&larr; Back to Log in</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Application Script -->
+  <script src="/app.js"></script>
+</body>
+</html>
