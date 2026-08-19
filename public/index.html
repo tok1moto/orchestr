@@ -26,9 +26,20 @@
         <span class="brand-name">Orchestr</span>
       </div>
       <div class="mobile-actions">
-        <button id="themeToggleMobile" class="icon-btn" aria-label="Toggle Theme">
-          <i data-lucide="moon" class="dark-icon"></i>
-          <i data-lucide="sun" class="light-icon"></i>
+        <button id="themeToggleMobile" class="theme-toggle-switch" onclick="window.toggleAppTheme()" aria-label="Toggle Theme" title="Toggle Theme">
+          <div class="toggle-track">
+            <div class="toggle-thumb">
+              <span class="sun-icon"><i data-lucide="sun"></i></span>
+              <span class="moon-icon"><i data-lucide="moon"></i></span>
+            </div>
+            <div class="toggle-decorations">
+              <span class="cloud cloud-1"></span>
+              <span class="cloud cloud-2"></span>
+              <span class="star star-1">✦</span>
+              <span class="star star-2">★</span>
+              <span class="star star-3">•</span>
+            </div>
+          </div>
         </button>
         <button id="mobileMenuBtn" class="icon-btn" aria-label="Toggle Navigation">
           <i data-lucide="menu"></i>
@@ -82,10 +93,20 @@
           </div>
         </div>
         <div class="footer-actions">
-          <button id="themeToggleSidebar" class="btn btn-ghost btn-sm" title="Toggle Theme">
-            <i data-lucide="moon" class="dark-icon"></i>
-            <i data-lucide="sun" class="light-icon"></i>
-            <span class="theme-text">Theme</span>
+          <button id="themeToggleSidebar" class="theme-toggle-switch" onclick="window.toggleAppTheme()" aria-label="Toggle Theme" title="Toggle Theme">
+            <div class="toggle-track">
+              <div class="toggle-thumb">
+                <span class="sun-icon"><i data-lucide="sun"></i></span>
+                <span class="moon-icon"><i data-lucide="moon"></i></span>
+              </div>
+              <div class="toggle-decorations">
+                <span class="cloud cloud-1"></span>
+                <span class="cloud cloud-2"></span>
+                <span class="star star-1">✦</span>
+                <span class="star star-2">★</span>
+                <span class="star star-3">•</span>
+              </div>
+            </div>
           </button>
           <button id="authBtn" class="btn btn-ghost btn-sm text-error" title="Sign Out">
             <i data-lucide="log-out"></i>
@@ -423,7 +444,12 @@
         </div>
         <div class="form-group">
           <label for="authPassword">Password</label>
-          <input type="password" id="authPassword" class="form-input" placeholder="••••••••" required value="Password123!">
+          <div class="password-input-wrapper">
+            <input type="password" id="authPassword" class="form-input" placeholder="••••••••" required value="Password123!">
+            <button type="button" id="toggleAuthPasswordBtn" class="toggle-password-btn" aria-label="Toggle password visibility">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
           
           <!-- Password Strength Indicator (Sign Up Mode) -->
           <div id="passwordStrengthWrapper" class="password-strength-container hidden">
@@ -490,11 +516,21 @@
         </div>
         <div class="form-group">
           <label for="resetNewPassword">New Password</label>
-          <input type="password" id="resetNewPassword" class="form-input" placeholder="Minimum 8 characters" required>
+          <div class="password-input-wrapper">
+            <input type="password" id="resetNewPassword" class="form-input" placeholder="Minimum 8 characters" required>
+            <button type="button" id="toggleResetNewPasswordBtn" class="toggle-password-btn" aria-label="Toggle password visibility">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
         </div>
         <div class="form-group">
           <label for="resetConfirmPassword">Confirm New Password</label>
-          <input type="password" id="resetConfirmPassword" class="form-input" placeholder="Re-enter password" required>
+          <div class="password-input-wrapper">
+            <input type="password" id="resetConfirmPassword" class="form-input" placeholder="Re-enter password" required>
+            <button type="button" id="toggleResetConfirmPasswordBtn" class="toggle-password-btn" aria-label="Toggle password visibility">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
         </div>
         <div class="form-actions full-width">
           <button type="submit" class="btn btn-primary full-width-btn" id="submitResetBtn">Reset Password</button>
