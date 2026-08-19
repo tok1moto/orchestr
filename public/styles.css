@@ -14,14 +14,16 @@
   --color-error: #ef4444;          /* Red */
   --color-neutral: #6b7280;        /* Gray */
 
-  /* Light Theme Surfaces & Text */
-  --color-bg: #f8fafc;
-  --color-card: #ffffff;
-  --color-card-hover: #f1f5f9;
-  --color-text: #0f172a;
-  --color-text-muted: #64748b;
-  --color-border: #e2e8f0;
-  --color-input-bg: #ffffff;
+  /* Dark Theme Surfaces & Text (Default) */
+  --color-bg: #0f172a;
+  --color-card: #1e293b;
+  --color-card-hover: #334155;
+  --color-text: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-border: #334155;
+  --color-input-bg: #1e293b;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
 
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -50,13 +52,26 @@
   --max-content-width: 1200px;
   --radius-subtle: 8px;
   --radius-emphasis: 12px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
   --transition: all 0.2s ease-in-out;
 }
 
+/* Light Mode Overrides */
+html.light, body.light, [data-theme="light"],
+body.light *, html.light * {
+  --color-bg: #f8fafc;
+  --color-card: #ffffff;
+  --color-card-hover: #f1f5f9;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border: #cbd5e1;
+  --color-input-bg: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
 /* Dark Mode Overrides */
-.dark {
+html.dark, body.dark, [data-theme="dark"],
+body.dark *, html.dark * {
   --color-bg: #0f172a;
   --color-card: #1e293b;
   --color-card-hover: #334155;
@@ -68,24 +83,200 @@
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
 }
 
-/* System Dark Mode Auto-Detection fallback if no theme class set */
-@media (prefers-color-scheme: dark) {
-  body:not(.light) {
-    --color-bg: #0f172a;
-    --color-card: #1e293b;
-    --color-card-hover: #334155;
-    --color-text: #f8fafc;
-    --color-text-muted: #94a3b8;
-    --color-border: #334155;
-    --color-input-bg: #1e293b;
-  }
-}
-
 /* Reset & Global Base */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* Smooth Fluid Theme Transitions */
+body,
+.sidebar,
+.top-header,
+.mobile-header,
+.card,
+.metric-card,
+.modal-card,
+.form-input,
+.form-select,
+.btn,
+.nav-item,
+.table-container,
+th,
+td,
+tr,
+.divider,
+.auth-tabs,
+.auth-tab,
+.password-input-wrapper,
+.badge,
+.alert-banner,
+.icon-btn,
+.mobile-brand,
+.brand-logo {
+  transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom Animated Sun / Moon Theme Toggle Switch */
+.theme-toggle-switch {
+  position: relative;
+  width: 58px;
+  height: 30px;
+  border-radius: 30px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer !important;
+  outline: none;
+  overflow: hidden;
+  user-select: none;
+  transition: transform 0.2s ease;
+}
+
+.theme-toggle-switch:hover {
+  transform: scale(1.06);
+}
+
+.theme-toggle-switch * {
+  pointer-events: none !important;
+}
+
+.toggle-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+  transition: background 0.4s ease, border-color 0.4s ease;
+  overflow: hidden;
+}
+
+/* Light Mode Track (Day: Sky Blue with Clouds) */
+body.light .toggle-track, html.light .toggle-track, [data-theme="light"] .toggle-track {
+  background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 100%);
+  border-color: #93c5fd;
+}
+
+/* Dark Mode Track (Night: Deep Space Navy) */
+body.dark .toggle-track, html.dark .toggle-track, [data-theme="dark"] .toggle-track {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  border-color: #334155;
+}
+
+/* Sliding Knob / Thumb */
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease, box-shadow 0.4s ease;
+  z-index: 2;
+}
+
+/* Light Mode Knob (Yellow Sun) */
+body.light .toggle-thumb, html.light .toggle-thumb, [data-theme="light"] .toggle-thumb {
+  transform: translateX(0);
+  background-color: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.8), inset 0 -1px 2px rgba(180, 83, 9, 0.4);
+  color: #78350f;
+}
+
+/* Dark Mode Knob (Silver Moon) */
+body.dark .toggle-thumb, html.dark .toggle-thumb, [data-theme="dark"] .toggle-thumb {
+  transform: translateX(28px);
+  background-color: #e2e8f0;
+  box-shadow: 0 0 8px rgba(226, 232, 240, 0.5), inset 0 -1px 2px rgba(71, 85, 105, 0.5);
+  color: #1e293b;
+}
+
+/* Knob Icons */
+.toggle-thumb .sun-icon,
+.toggle-thumb .moon-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-thumb svg {
+  width: 14px;
+  height: 14px;
+}
+
+body.light .sun-icon, html.light .sun-icon, [data-theme="light"] .sun-icon { display: flex; }
+body.light .moon-icon, html.light .moon-icon, [data-theme="light"] .moon-icon { display: none; }
+
+body.dark .sun-icon, html.dark .sun-icon, [data-theme="dark"] .sun-icon { display: none; }
+body.dark .moon-icon, html.dark .moon-icon, [data-theme="dark"] .moon-icon { display: flex; }
+
+/* Decorative Background Elements (Clouds & Stars) */
+.toggle-decorations {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cloud {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.cloud-1 {
+  bottom: 2px;
+  right: 6px;
+  width: 18px;
+  height: 8px;
+}
+
+.cloud-2 {
+  bottom: 6px;
+  right: 14px;
+  width: 12px;
+  height: 7px;
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+body.dark .cloud, html.dark .cloud, [data-theme="dark"] .cloud {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+body.light .cloud, html.light .cloud, [data-theme="light"] .cloud {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.star {
+  position: absolute;
+  color: #fef08a;
+  font-size: 8px;
+  line-height: 1;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.star-1 { top: 4px; left: 6px; font-size: 9px; opacity: 0.9; }
+.star-2 { top: 13px; left: 15px; font-size: 7px; opacity: 0.7; }
+.star-3 { top: 5px; left: 22px; font-size: 6px; opacity: 0.8; }
+
+body.light .star, html.light .star, [data-theme="light"] .star {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+body.dark .star, html.dark .star, [data-theme="dark"] .star {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 body {
@@ -703,6 +894,44 @@ small, .text-small {
   box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
 }
 
+/* Password Input Wrapper & Eye Toggle Button */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper .form-input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.toggle-password-btn:hover {
+  color: var(--color-text);
+}
+
+.toggle-password-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
 .checkbox-group {
   display: flex;
   flex-direction: column;
@@ -738,6 +967,44 @@ small, .text-small {
   max-width: 480px;
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-md);
+}
+
+/* Auth Modal Tabs */
+.auth-tabs {
+  display: flex;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-subtle);
+  padding: 4px;
+  margin-bottom: var(--spacing-md);
+  gap: 4px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: calc(var(--radius-subtle) - 2px);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.auth-tab:hover {
+  color: var(--color-text);
+  background-color: var(--color-card-hover);
+}
+
+.auth-tab.active {
+  background-color: var(--color-primary-teal);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
 .modal-header {
