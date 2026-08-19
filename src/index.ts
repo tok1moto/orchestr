@@ -2,6 +2,8 @@ import dotenv from 'dotenv';
 import Fastify from 'fastify';
 import dbPlugin from './plugins/db';
 import authRoutes from './routes/auth.routes';
+import sellerRoutes from './routes/seller.routes';
+import channelRoutes from './routes/channel.routes';
 
 dotenv.config();
 
@@ -11,6 +13,29 @@ const server = Fastify({
 
 server.register(dbPlugin);
 server.register(authRoutes);
+server.register(sellerRoutes);
+server.register(channelRoutes);
+
+server.get('/', async () => {
+  return {
+    name: 'Orchestr API',
+    version: '1.0.0',
+    status: 'online',
+    endpoints: {
+      health: 'GET /health',
+      register: 'POST /auth/register',
+      login: 'POST /auth/login',
+      myProfile: 'GET /api/sellers/me',
+      updateProfile: 'PATCH /api/sellers/me',
+      channels: 'GET /api/channels',
+      createChannel: 'POST /api/channels',
+      syncChannelProducts: 'POST /api/channels/:id/sync',
+    },
+  };
+});
+
+
+
 
 
 server.get('/health', async (_request, reply) => {
