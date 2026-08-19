@@ -15,7 +15,7 @@
     channels: [],
     orders: [],
     products: [],
-    theme: localStorage.getItem('orchestr_theme') || 'auto',
+    theme: localStorage.getItem('orchestr_theme') || 'dark',
   };
 
   // API Base Helper
@@ -52,6 +52,25 @@
         applyTheme('auto');
       }
     });
+
+    window.toggleAppTheme = function () {
+      const isCurrentlyDark = state.theme === 'dark' || document.body.classList.contains('dark') || document.documentElement.classList.contains('dark') || (!document.body.classList.contains('light') && !document.documentElement.classList.contains('light'));
+      const nextTheme = isCurrentlyDark ? 'light' : 'dark';
+      applyTheme(nextTheme);
+    };
+
+    // Global click listener for theme toggle switches
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('#themeToggleSidebar, #themeToggleMobile, .theme-toggle-switch');
+      if (btn) {
+        e.preventDefault();
+        window.toggleAppTheme();
+      }
+    });
+
+    document.getElementById('themeAutoBtn')?.addEventListener('click', () => applyTheme('auto'));
+    document.getElementById('themeLightBtn')?.addEventListener('click', () => applyTheme('light'));
+    document.getElementById('themeDarkBtn')?.addEventListener('click', () => applyTheme('dark'));
   }
 
   function applyTheme(theme) {
@@ -59,14 +78,38 @@
     localStorage.setItem('orchestr_theme', theme);
 
     const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = theme === 'dark' || (theme === 'auto' && isSystemDark);
+    const isDark = theme === 'dark' || (theme === 'auto' ? isSystemDark : false);
+
+    const html = document.documentElement;
+    const body = document.body;
 
     if (isDark) {
-      document.body.classList.add('dark');
-      document.body.classList.remove('light');
+      html.classList.add('dark');
+      html.classList.remove('light');
+      body.classList.add('dark');
+      body.classList.remove('light');
+      html.setAttribute('data-theme', 'dark');
+      body.setAttribute('data-theme', 'dark');
     } else {
-      document.body.classList.add('light');
-      document.body.classList.remove('dark');
+      html.classList.add('light');
+      html.classList.remove('dark');
+      body.classList.add('light');
+      body.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+      body.setAttribute('data-theme', 'light');
+    }
+
+    // Sync active state on Settings Theme Picker buttons
+    document.getElementById('themeAutoBtn')?.classList.toggle('active', theme === 'auto');
+    document.getElementById('themeLightBtn')?.classList.toggle('active', theme === 'light');
+    document.getElementById('themeDarkBtn')?.classList.toggle('active', theme === 'dark');
+
+    try {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    } catch (err) {
+      console.warn('[Lucide Error]', err);
     }
   }
 
@@ -242,6 +285,25 @@
     forgotPasswordLink?.addEventListener('click', (e) => { e.preventDefault(); setAuthMode('forgot'); });
     backToLoginFromForgot?.addEventListener('click', (e) => { e.preventDefault(); setAuthMode('login'); });
     backToLoginFromReset?.addEventListener('click', (e) => { e.preventDefault(); setAuthMode('login'); });
+
+    // Password Visibility Toggle Handler
+    function setupPasswordToggle(buttonId, inputId) {
+      const btn = document.getElementById(buttonId);
+      const input = document.getElementById(inputId);
+      if (!btn || !input) return;
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isPassword = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPassword ? 'text' : 'password');
+        btn.innerHTML = isPassword ? '<i data-lucide="eye-off"></i>' : '<i data-lucide="eye"></i>';
+        if (window.lucide) window.lucide.createIcons();
+      });
+    }
+
+    setupPasswordToggle('toggleAuthPasswordBtn', 'authPassword');
+    setupPasswordToggle('toggleResetNewPasswordBtn', 'resetNewPassword');
+    setupPasswordToggle('toggleResetConfirmPasswordBtn', 'resetConfirmPassword');
 
     // Live Email Validation
     authEmail?.addEventListener('input', () => {
