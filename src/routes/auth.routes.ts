@@ -44,4 +44,43 @@ export default async function authRoutes(fastify: FastifyInstance, _options: Fas
       sellerId: request.sellerId,
     });
   });
+
+  // POST /auth/forgot-password
+  fastify.post('/auth/forgot-password', async (request, reply) => {
+    try {
+      const { email } = (request.body as any) || {};
+      const result = await AuthService.forgotPassword(fastify.pg, email);
+      return reply.status(200).send({
+        statusCode: 200,
+        ...result,
+      });
+    } catch (err: any) {
+      const statusCode = err.statusCode || 500;
+      return reply.status(statusCode).send({
+        statusCode,
+        error: statusCode === 400 ? 'Bad Request' : 'Internal Server Error',
+        message: err.message || 'Forgot password request failed',
+      });
+    }
+  });
+
+  // POST /auth/reset-password
+  fastify.post('/auth/reset-password', async (request, reply) => {
+    try {
+      const { token, newPassword } = (request.body as any) || {};
+      const result = await AuthService.resetPassword(fastify.pg, token, newPassword);
+      return reply.status(200).send({
+        statusCode: 200,
+        ...result,
+      });
+    } catch (err: any) {
+      const statusCode = err.statusCode || 500;
+      return reply.status(statusCode).send({
+        statusCode,
+        error: statusCode === 400 ? 'Bad Request' : 'Internal Server Error',
+        message: err.message || 'Password reset failed',
+      });
+    }
+  });
 }
+

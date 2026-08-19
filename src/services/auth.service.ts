@@ -206,4 +206,70 @@ export class AuthService {
       },
     };
   }
+
+  // In-memory store for password reset tokens
+  private static resetTokensMap: Map<string, { email: string; expiresAt: number }> = new Map();
+
+  /**
+   * Generates a password reset token for an email address.
+   */
+  public static async forgotPassword(db: DbQuerier, email: string): Promise<{ message: string; resetToken?: string }> {
+    if (!email) {
+      const error: any = new Error('Email is required');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const result = await db.query('SELECT id FROM users WHERE email = $1', [cleanEmail]);
+
+    // For security, even if email is not found, return success message
+    if (result.rows.length === 0) {
+      return { message: 'If an account with that email exists, password reset instructions have been sent.' };
+    }
+
+    const crypto = await import('crypto');
+    const resetToken = `reset_tok_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+    const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
+
+    this.resetTokensMap.set(resetToken, { email: cleanEmail, expiresAt });
+
+    return {
+      message: 'Password reset instructions have been sent to your email address.',
+      resetToken,
+    };
+  }
+
+  /**
+   * Resets password using a valid reset token.
+   */
+  public static async resetPassword(db: DbQuerier, token: string, newPassword: string): Promise<{ message: string }> {
+    if (!token || !newPassword) {
+      const error: any = new Error('Token and new password are required');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (newPassword.length < 8) {
+      const error: any = new Error('Password must be at least 8 characters long');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const resetData = this.resetTokensMap.get(token);
+    if (!resetData || resetData.expiresAt < Date.now()) {
+      const error: any = new Error('Invalid or expired password reset token');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const passwordHash = await this.hashPassword(newPassword);
+    await db.query('UPDATE users SET password_hash = $1 WHERE email = $2', [passwordHash, resetData.email]);
+
+    // Clean up used token
+    this.resetTokensMap.delete(token);
+
+    return { message: 'Password has been reset successfully. Please log in with your new password.' };
+  }
 }
+

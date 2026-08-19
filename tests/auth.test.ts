@@ -130,6 +130,18 @@ describe('Auth Endpoints & Protected Routes (Integration)', () => {
       }
 
 
+      // UPDATE users password_hash
+      if (normalizedText.includes('UPDATE users SET password_hash')) {
+        const passwordHash = params[0];
+        const email = params[1];
+        const user = mockUsersDB.get(email);
+        if (user) {
+          user.password_hash = passwordHash;
+          mockUsersDB.set(email, user);
+        }
+        return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
+      }
+
       return { rows: [], rowCount: 0 };
     },
   };
@@ -265,4 +277,58 @@ describe('Auth Endpoints & Protected Routes (Integration)', () => {
     assert.strictEqual(authBody.sellerId, user.sellerId);
     assert.strictEqual(authBody.user.email, 'protected@merchant.com');
   });
+
+  it('POST /auth/forgot-password and POST /auth/reset-password completes password reset flow', async () => {
+    // 1. Register initial user
+    await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email: 'resetuser@merchant.com',
+        password: 'OldPassword123',
+      },
+    });
+
+    // 2. Request forgot password token
+    const forgotRes = await app.inject({
+      method: 'POST',
+      url: '/auth/forgot-password',
+      payload: {
+        email: 'resetuser@merchant.com',
+      },
+    });
+
+    assert.strictEqual(forgotRes.statusCode, 200);
+    const forgotBody = JSON.parse(forgotRes.payload);
+    assert.ok(forgotBody.resetToken);
+
+    // 3. Reset password using valid token
+    const resetRes = await app.inject({
+      method: 'POST',
+      url: '/auth/reset-password',
+      payload: {
+        token: forgotBody.resetToken,
+        newPassword: 'BrandNewSecretPassword123!',
+      },
+    });
+
+    assert.strictEqual(resetRes.statusCode, 200);
+    const resetBody = JSON.parse(resetRes.payload);
+    assert.ok(resetBody.message.includes('successfully'));
+
+    // 4. Verify login succeeds with new password
+    const loginNewRes = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email: 'resetuser@merchant.com',
+        password: 'BrandNewSecretPassword123!',
+      },
+    });
+
+    assert.strictEqual(loginNewRes.statusCode, 200);
+    const loginNewBody = JSON.parse(loginNewRes.payload);
+    assert.ok(loginNewBody.token);
+  });
 });
+
