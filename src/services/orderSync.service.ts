@@ -13,10 +13,21 @@ export interface SyncLogItem {
   updatedAt: string;
 }
 
+export interface OrderQueryFilters {
+  status?: string;
+  email?: string;
+  startDate?: string;
+  endDate?: string;
+  channelId?: string;
+  search?: string;
+}
+
 export interface OrderRecord {
   id: string;
   sellerId: string;
   channelId: string | null;
+  channelName?: string;
+  channelType?: string;
   externalOrderId: string;
   orderNumber: string;
   customerName: string;
@@ -205,41 +216,60 @@ export class OrderSyncService {
   }
 
   /**
-   * Retrieves orders for a seller: `SELECT * FROM orders WHERE seller_id = ?`
+   * Retrieves orders for a seller with filtering by status, email, date range, channelId, and search terms.
+   * Joins channels table to include channelName and channelType.
    */
   public static async getOrdersBySeller(
     db: DbQuerier,
     sellerId: string,
-    filters?: { status?: string; channelId?: string; search?: string }
+    filters?: OrderQueryFilters
   ): Promise<OrderRecord[]> {
-    const conditions: string[] = ['seller_id = $1'];
+    const conditions: string[] = ['o.seller_id = $1'];
     const params: any[] = [sellerId];
     let paramIdx = 2;
 
     if (filters?.status && filters.status !== 'all') {
-      conditions.push(`status = $${paramIdx++}`);
+      conditions.push(`LOWER(o.status) = $${paramIdx++}`);
       params.push(filters.status.toLowerCase());
     }
 
+    if (filters?.email) {
+      conditions.push(`LOWER(o.customer_email) = $${paramIdx++}`);
+      params.push(filters.email.toLowerCase().trim());
+    }
+
+    if (filters?.startDate) {
+      conditions.push(`o.created_at >= $${paramIdx++}`);
+      params.push(new Date(filters.startDate).toISOString());
+    }
+
+    if (filters?.endDate) {
+      conditions.push(`o.created_at <= $${paramIdx++}`);
+      params.push(new Date(filters.endDate).toISOString());
+    }
+
     if (filters?.channelId && filters.channelId !== 'all') {
-      conditions.push(`channel_id = $${paramIdx++}`);
+      conditions.push(`o.channel_id = $${paramIdx++}`);
       params.push(filters.channelId);
     }
 
     if (filters?.search) {
       conditions.push(
-        `(LOWER(order_number) LIKE $${paramIdx} OR LOWER(customer_name) LIKE $${paramIdx} OR LOWER(customer_email) LIKE $${paramIdx})`
+        `(LOWER(o.order_number) LIKE $${paramIdx} OR LOWER(o.customer_name) LIKE $${paramIdx} OR LOWER(o.customer_email) LIKE $${paramIdx})`
       );
       params.push(`%${filters.search.toLowerCase()}%`);
       paramIdx++;
     }
 
     const sql = `
-      SELECT id, seller_id, channel_id, external_order_id, order_number, customer_name, customer_email,
-             total_price, currency, financial_status, fulfillment_status, status, line_items, raw_data, created_at, updated_at
-      FROM orders
+      SELECT o.id, o.seller_id, o.channel_id, c.name AS channel_name, c.type AS channel_type,
+             o.external_order_id, o.order_number, o.customer_name, o.customer_email,
+             o.total_price, o.currency, o.financial_status, o.fulfillment_status, o.status,
+             o.line_items, o.raw_data, o.created_at, o.updated_at
+      FROM orders o
+      LEFT JOIN channels c ON o.channel_id = c.id
       WHERE ${conditions.join(' AND ')}
-      ORDER BY created_at DESC
+      ORDER BY o.created_at DESC
     `;
 
     const result = await db.query(sql, params);
@@ -248,21 +278,24 @@ export class OrderSyncService {
       id: row.id,
       sellerId: row.seller_id,
       channelId: row.channel_id,
+      channelName: row.channel_name || 'Direct / Store',
+      channelType: row.channel_type || 'custom',
       externalOrderId: row.external_order_id,
       orderNumber: row.order_number,
-      customerName: row.customer_name,
-      customerEmail: row.customer_email,
-      totalPrice: parseFloat(row.total_price),
-      currency: row.currency,
-      financialStatus: row.financial_status,
-      fulfillmentStatus: row.fulfillment_status,
+      customerName: row.customer_name || 'Guest Customer',
+      customerEmail: row.customer_email || 'N/A',
+      totalPrice: parseFloat(row.total_price || 0),
+      currency: row.currency || 'USD',
+      financialStatus: row.financial_status || 'pending',
+      fulfillmentStatus: row.fulfillment_status || 'unfulfilled',
       status: row.status,
-      lineItems: typeof row.line_items === 'string' ? JSON.parse(row.line_items) : row.line_items,
-      rawData: typeof row.raw_data === 'string' ? JSON.parse(row.raw_data) : row.raw_data,
+      lineItems: typeof row.line_items === 'string' ? JSON.parse(row.line_items) : (row.line_items || []),
+      rawData: typeof row.raw_data === 'string' ? JSON.parse(row.raw_data) : (row.raw_data || {}),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     }));
   }
+
 
   /**
    * Retrieves sync logs history for a seller.
