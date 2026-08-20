@@ -84,12 +84,17 @@ server.get('/health', async (_request, reply) => {
   return healthStatus;
 });
 
+import { OrderSyncQueue } from './queues/orderSync.queue';
+
 const start = async () => {
   try {
     const port = parseInt(process.env.PORT || '3000', 10);
     const host = process.env.HOST || '0.0.0.0';
     await server.listen({ port, host });
     console.log(`Server running on http://${host}:${port}`);
+
+    // Start 5-minute Shopify Order Polling Scheduler Queue
+    OrderSyncQueue.startOrderSyncScheduler(server.pg);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
@@ -97,3 +102,4 @@ const start = async () => {
 };
 
 start();
+

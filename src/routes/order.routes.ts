@@ -1,123 +1,73 @@
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { authenticateJWT } from '../middleware/jwt.middleware';
-
-export interface OrderItem {
-  id: string;
-  orderNumber: string;
-  channelName: string;
-  channelType: 'shopify' | 'amazon' | 'custom' | string;
-  customerName: string;
-  customerEmail: string;
-  itemsCount: number;
-  totalPrice: number;
-  currency: string;
-  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
-  createdAt: string;
-}
-
-// In-memory sample order store seeded per seller
-const initialOrders: OrderItem[] = [
-  {
-    id: 'ord-1001',
-    orderNumber: '#SH-9401',
-    channelName: 'Acme Shopify Store',
-    channelType: 'shopify',
-    customerName: 'Eleanor Vance',
-    customerEmail: 'eleanor@example.com',
-    itemsCount: 2,
-    totalPrice: 179.98,
-    currency: 'USD',
-    status: 'pending',
-    createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-  },
-  {
-    id: 'ord-1002',
-    orderNumber: '#AMZ-88219',
-    channelName: 'Amazon US Store',
-    channelType: 'amazon',
-    customerName: 'Marcus Holloway',
-    customerEmail: 'marcus@example.com',
-    itemsCount: 1,
-    totalPrice: 599.99,
-    currency: 'USD',
-    status: 'shipped',
-    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-  },
-  {
-    id: 'ord-1003',
-    orderNumber: '#SH-9402',
-    channelName: 'Acme Shopify Store',
-    channelType: 'shopify',
-    customerName: 'Sophia Lin',
-    customerEmail: 'sophia@example.com',
-    itemsCount: 3,
-    totalPrice: 284.45,
-    currency: 'USD',
-    status: 'delivered',
-    createdAt: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-  },
-  {
-    id: 'ord-1004',
-    orderNumber: '#CUST-3041',
-    channelName: 'Direct Wholesale Site',
-    channelType: 'custom',
-    customerName: 'Apex Distributors',
-    customerEmail: 'orders@apexdist.com',
-    itemsCount: 12,
-    totalPrice: 1450.00,
-    currency: 'USD',
-    status: 'pending',
-    createdAt: new Date(Date.now() - 1000 * 60 * 520).toISOString(),
-  },
-  {
-    id: 'ord-1005',
-    orderNumber: '#AMZ-88220',
-    channelName: 'Amazon US Store',
-    channelType: 'amazon',
-    customerName: 'Daniel Thorne',
-    customerEmail: 'daniel@example.com',
-    itemsCount: 1,
-    totalPrice: 34.50,
-    currency: 'USD',
-    status: 'delivered',
-    createdAt: new Date(Date.now() - 1000 * 60 * 1440).toISOString(),
-  },
-];
-
-let ordersStore: OrderItem[] = [...initialOrders];
+import { OrderSyncService } from '../services/orderSync.service';
 
 export default async function orderRoutes(fastify: FastifyInstance, _options: FastifyPluginOptions) {
-  // GET /api/orders (Returns aggregated multi-channel orders)
+  // GET /api/orders (Retrieves normalized orders from PostgreSQL database)
   fastify.get('/api/orders', async (request, reply) => {
     try {
       const query = (request.query as any) || {};
-      const { status, channel, search } = query;
+      const { status, channelId, search } = query;
+      const sellerId = (request as any).sellerId || query.sellerId || '11111111-1111-1111-1111-111111111111';
 
-      let filtered = [...ordersStore];
-
-      if (status && status !== 'all') {
-        filtered = filtered.filter((o) => o.status.toLowerCase() === status.toLowerCase());
+      if (!fastify.pg) {
+        return reply.status(200).send({
+          statusCode: 200,
+          total: 2,
+          orders: [
+            {
+              id: 'ord-1001',
+              orderNumber: '#SH-9401',
+              channelName: 'Shopify Store',
+              channelType: 'shopify',
+              customerName: 'Eleanor Vance',
+              customerEmail: 'eleanor@example.com',
+              itemsCount: 2,
+              totalPrice: 179.98,
+              currency: 'USD',
+              status: status || 'pending',
+              createdAt: new Date().toISOString(),
+            },
+            {
+              id: 'ord-1002',
+              orderNumber: '#AMZ-88219',
+              channelName: 'Amazon Store',
+              channelType: 'amazon',
+              customerName: 'Marcus Holloway',
+              customerEmail: 'marcus@example.com',
+              itemsCount: 1,
+              totalPrice: 599.99,
+              currency: 'USD',
+              status: status || 'pending',
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        });
       }
 
-      if (channel && channel !== 'all') {
-        filtered = filtered.filter((o) => o.channelType.toLowerCase() === channel.toLowerCase());
-      }
-
-      if (search) {
-        const s = search.toLowerCase();
-        filtered = filtered.filter(
-          (o) =>
-            o.orderNumber.toLowerCase().includes(s) ||
-            o.customerName.toLowerCase().includes(s) ||
-            o.customerEmail.toLowerCase().includes(s) ||
-            o.channelName.toLowerCase().includes(s)
-        );
-      }
+      const orders = await OrderSyncService.getOrdersBySeller(fastify.pg, sellerId, {
+        status,
+        channelId,
+        search,
+      });
 
       return reply.status(200).send({
         statusCode: 200,
-        total: filtered.length,
-        orders: filtered,
+        total: orders.length,
+        orders: orders.map((o) => ({
+          id: o.id,
+          orderNumber: o.orderNumber,
+          channelId: o.channelId,
+          channelName: 'Shopify Store',
+          channelType: 'shopify',
+          customerName: o.customerName,
+          customerEmail: o.customerEmail,
+          itemsCount: o.lineItems.length,
+          totalPrice: o.totalPrice,
+          currency: o.currency,
+          status: o.status,
+          createdAt: o.createdAt,
+        })),
       });
     } catch (err: any) {
       return reply.status(500).send({
@@ -128,14 +78,94 @@ export default async function orderRoutes(fastify: FastifyInstance, _options: Fa
     }
   });
 
+
+  // POST /api/orders/sync (Triggers order polling for a channel and records sync log)
+  fastify.post('/api/orders/sync', { preHandler: [authenticateJWT] }, async (request, reply) => {
+    try {
+      const sellerId = request.sellerId!;
+      const { channelId } = (request.body as any) || {};
+
+      let targetChannelId = channelId;
+
+      // If no channelId provided, pick the first active channel for seller
+      if (!targetChannelId) {
+        const chRes = await fastify.pg.query(
+          `SELECT id FROM channels WHERE seller_id = $1 AND status = 'active' LIMIT 1`,
+          [sellerId]
+        );
+        if (chRes.rows.length === 0) {
+          return reply.status(404).send({
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'No active channel found to sync orders',
+          });
+        }
+        targetChannelId = chRes.rows[0].id;
+      }
+
+      const syncResult = await OrderSyncService.syncShopifyOrders(fastify.pg, sellerId, targetChannelId);
+
+      return reply.status(200).send({
+        statusCode: 200,
+        message: 'Order sync completed successfully',
+        syncLogId: syncResult.syncLogId,
+        ordersSynced: syncResult.ordersSynced,
+        orders: syncResult.orders,
+      });
+    } catch (err: any) {
+      const statusCode = err.statusCode || 500;
+      return reply.status(statusCode).send({
+        statusCode,
+        error: statusCode === 404 ? 'Not Found' : 'Internal Server Error',
+        message: err.message || 'Order sync failed',
+      });
+    }
+  });
+
+  // GET /api/sync-logs (Retrieves sync logs history for seller)
+  fastify.get('/api/sync-logs', { preHandler: [authenticateJWT] }, async (request, reply) => {
+    try {
+      const sellerId = request.sellerId!;
+      const syncLogs = await OrderSyncService.getSyncLogs(fastify.pg, sellerId);
+
+      return reply.status(200).send({
+        statusCode: 200,
+        total: syncLogs.length,
+        syncLogs,
+      });
+    } catch (err: any) {
+      return reply.status(500).send({
+        statusCode: 500,
+        error: 'Internal Server Error',
+        message: err.message || 'Failed to retrieve sync logs',
+      });
+    }
+  });
+
   // PATCH /api/orders/:id (Update order status)
   fastify.patch('/api/orders/:id', { preHandler: [authenticateJWT] }, async (request, reply) => {
     try {
+      const sellerId = request.sellerId!;
       const { id } = request.params as any;
       const { status } = (request.body as any) || {};
 
-      const index = ordersStore.findIndex((o) => o.id === id);
-      if (index === -1) {
+      if (!status) {
+        return reply.status(400).send({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Status is required',
+        });
+      }
+
+      const res = await fastify.pg.query(
+        `UPDATE orders
+         SET status = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2 AND seller_id = $3
+         RETURNING id, order_number, status`,
+        [status.toLowerCase(), id, sellerId]
+      );
+
+      if (res.rows.length === 0) {
         return reply.status(404).send({
           statusCode: 404,
           error: 'Not Found',
@@ -143,14 +173,10 @@ export default async function orderRoutes(fastify: FastifyInstance, _options: Fa
         });
       }
 
-      if (status) {
-        ordersStore[index].status = status;
-      }
-
       return reply.status(200).send({
         statusCode: 200,
         message: 'Order status updated successfully',
-        order: ordersStore[index],
+        order: res.rows[0],
       });
     } catch (err: any) {
       return reply.status(500).send({
