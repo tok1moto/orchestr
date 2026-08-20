@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import sellerRoutes from './routes/seller.routes';
 import channelRoutes from './routes/channel.routes';
 import orderRoutes from './routes/order.routes';
+import productRoutes from './routes/product.routes';
 
 dotenv.config();
 
@@ -24,6 +25,8 @@ server.register(authRoutes);
 server.register(sellerRoutes);
 server.register(channelRoutes);
 server.register(orderRoutes);
+server.register(productRoutes);
+
 
 
 server.get('/api', async () => {
@@ -85,6 +88,7 @@ server.get('/health', async (_request, reply) => {
 });
 
 import { OrderSyncQueue } from './queues/orderSync.queue';
+import { InventorySyncQueue } from './queues/inventorySync.queue';
 
 const start = async () => {
   try {
@@ -93,8 +97,9 @@ const start = async () => {
     await server.listen({ port, host });
     console.log(`Server running on http://${host}:${port}`);
 
-    // Start 5-minute Shopify Order Polling Scheduler Queue
+    // Start 5-minute Shopify Order & Inventory Polling Schedulers
     OrderSyncQueue.startOrderSyncScheduler(server.pg);
+    InventorySyncQueue.startInventorySyncScheduler(server.pg);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
@@ -102,4 +107,3 @@ const start = async () => {
 };
 
 start();
-
