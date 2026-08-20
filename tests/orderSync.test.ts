@@ -330,7 +330,7 @@ describe('Order API Routes & 5-Minute Queue Scheduler', () => {
     OrderSyncQueue.stopOrderSyncScheduler();
   });
 
-  it('GET /api/orders returns orders from PostgreSQL database', async () => {
+  it('GET /api/orders returns orders from PostgreSQL database with channel info and line items', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/orders',
@@ -341,7 +341,38 @@ describe('Order API Routes & 5-Minute Queue Scheduler', () => {
     assert.strictEqual(body.statusCode, 200);
     assert.ok(Array.isArray(body.orders));
     assert.strictEqual(body.orders.length, 1);
-    assert.strictEqual(body.orders[0].orderNumber, '#SH-9401');
+
+    const order = body.orders[0];
+    assert.strictEqual(order.orderNumber, '#SH-9401');
+    assert.ok(order.channelName);
+    assert.ok(order.channelType);
+    assert.ok(Array.isArray(order.lineItems));
+  });
+
+  it('GET /api/orders supports status, email, and date range query parameters', async () => {
+    const resStatus = await app.inject({
+      method: 'GET',
+      url: '/api/orders?status=pending',
+    });
+    assert.strictEqual(resStatus.statusCode, 200);
+    const bodyStatus = JSON.parse(resStatus.payload);
+    assert.strictEqual(bodyStatus.statusCode, 200);
+
+    const resEmail = await app.inject({
+      method: 'GET',
+      url: '/api/orders?email=customer@test.com',
+    });
+    assert.strictEqual(resEmail.statusCode, 200);
+    const bodyEmail = JSON.parse(resEmail.payload);
+    assert.strictEqual(bodyEmail.statusCode, 200);
+
+    const resDate = await app.inject({
+      method: 'GET',
+      url: '/api/orders?startDate=2026-01-01&endDate=2026-12-31',
+    });
+    assert.strictEqual(resDate.statusCode, 200);
+    const bodyDate = JSON.parse(resDate.payload);
+    assert.strictEqual(bodyDate.statusCode, 200);
   });
 
   it('POST /api/orders/sync triggers order polling and returns sync result', async () => {
@@ -383,3 +414,4 @@ describe('Order API Routes & 5-Minute Queue Scheduler', () => {
     assert.strictEqual(body.syncLogs[0].status, 'success');
   });
 });
+
