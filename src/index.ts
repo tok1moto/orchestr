@@ -9,6 +9,7 @@ import channelRoutes from './routes/channel.routes';
 import orderRoutes from './routes/order.routes';
 import productRoutes from './routes/product.routes';
 import reservationRoutes from './routes/reservation.routes';
+import fulfillmentRoutes from './routes/fulfillment.routes';
 
 dotenv.config();
 
@@ -28,6 +29,8 @@ server.register(channelRoutes);
 server.register(orderRoutes);
 server.register(productRoutes);
 server.register(reservationRoutes);
+server.register(fulfillmentRoutes);
+
 
 
 
