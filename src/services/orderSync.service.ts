@@ -1,6 +1,7 @@
 import { DbQuerier } from './auth.service';
 import { ChannelService } from './channel.service';
 import { OrderNormalizationService, NormalizedOrder } from './orderNormalization.service';
+import { AlertService } from './alert.service';
 
 export interface SyncLogItem {
   id: string;
@@ -211,8 +212,16 @@ export class OrderSyncService {
         [err.message || 'Sync failed', syncLogId]
       );
 
+      // Check if 3 consecutive syncs failed for channel and send alert email
+      try {
+        await AlertService.checkAndAlertConsecutiveFailures(db, sellerId, channelId);
+      } catch (alertErr: any) {
+        console.error('[OrderSyncService] Alert evaluation failed:', alertErr.message);
+      }
+
       throw err;
     }
+
   }
 
   /**
