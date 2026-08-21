@@ -10,6 +10,7 @@ import orderRoutes from './routes/order.routes';
 import productRoutes from './routes/product.routes';
 import reservationRoutes from './routes/reservation.routes';
 import fulfillmentRoutes from './routes/fulfillment.routes';
+import healthRoutes from './routes/health.routes';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ server.register(orderRoutes);
 server.register(productRoutes);
 server.register(reservationRoutes);
 server.register(fulfillmentRoutes);
+server.register(healthRoutes);
 
 
 
@@ -49,49 +51,11 @@ server.get('/api', async () => {
       channels: 'GET /api/channels',
       createChannel: 'POST /api/channels',
       syncChannelProducts: 'POST /api/channels/:id/sync',
+      syncLogsDashboard: 'GET /api/sync-logs/dashboard',
     },
   };
 });
 
-
-
-
-
-server.get('/health', async (_request, reply) => {
-  const healthStatus: Record<string, any> = {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    services: {
-      database: { status: 'unknown' },
-    },
-  };
-
-  try {
-    const startTime = Date.now();
-    await server.pg.query('SELECT 1');
-    const responseTimeMs = Date.now() - startTime;
-
-    healthStatus.services.database = {
-      status: 'up',
-      responseTimeMs,
-      pool: {
-        totalCount: server.pg.pool.totalCount,
-        idleCount: server.pg.pool.idleCount,
-        waitingCount: server.pg.pool.waitingCount,
-      },
-    };
-  } catch (err: any) {
-    server.log.error({ err }, 'Health check: Database ping failed');
-    healthStatus.status = 'degraded';
-    healthStatus.services.database = {
-      status: 'down',
-      error: err.message,
-    };
-    return reply.status(503).send(healthStatus);
-  }
-
-  return healthStatus;
-});
 
 import { OrderSyncQueue } from './queues/orderSync.queue';
 import { InventorySyncQueue } from './queues/inventorySync.queue';
